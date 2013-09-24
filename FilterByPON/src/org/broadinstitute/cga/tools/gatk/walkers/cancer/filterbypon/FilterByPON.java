@@ -32,7 +32,7 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
     @ArgumentCollection
     protected StandardVariantContextInputArgumentCollection variantCollection = new StandardVariantContextInputArgumentCollection();
 
-    @Input(fullName="panel_of_normals", shortName="panel", doc="Panel of normals", required=false)
+    @Input(fullName="panel_of_normals", shortName="panel", doc="Panel of normals")
     public RodBinding<VariantContext> panel;
 
     @Output(doc="File to which variants should be written")
@@ -43,7 +43,7 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
 
     @Override
     public void initialize(){
-        initializeVcfHeader();
+       // initializeVcfHeader();
     }
 
     private void initializeVcfHeader() {
@@ -59,13 +59,18 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
 
     @Override
     public Integer map(RefMetaDataTracker tracker, ReferenceContext ref, AlignmentContext context) {
+        //check if we're at the last position
+        if ( ref == null){
+            return 0;
+        }
+
         Collection<VariantContext> matching = tracker.getValues(panel,ref.getLocus());
         return matching.size();
     }
 
     @Override
     public Integer reduceInit() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     @Override
