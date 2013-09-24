@@ -33,9 +33,9 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
     protected StandardVariantContextInputArgumentCollection variantCollection = new StandardVariantContextInputArgumentCollection();
 
     @Input(fullName="panel_of_normals", shortName="panel", doc="Panel of normals")
-    public RodBinding<VariantContext> panel;
+    public List<RodBinding<VariantContext>> panel = Collections.emptyList();;
 
-    @Output(doc="File to which variants should be written")
+    @Output(fullName="vcfout", shortName="out", doc="File to write variants which are not filtered out." )
     protected VariantContextWriter vcfWriter = null;
 
 
@@ -43,7 +43,7 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
 
     @Override
     public void initialize(){
-       // initializeVcfHeader();
+        initializeVcfHeader();
     }
 
     private void initializeVcfHeader() {
@@ -51,7 +51,6 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
         Map<String, VCFHeader> vcfRods = GATKVCFUtils.getVCFHeadersFromRods(this.getToolkit(), rodNames);
 
         Set<String> vcfSamples = SampleUtils.getSampleList(vcfRods, GATKVariantContextUtils.GenotypeMergeType.REQUIRE_UNIQUE);
-
 
         Set<VCFHeaderLine> headerLines = VCFUtils.smartMergeHeaders(vcfRods.values(), true);
         vcfWriter.writeHeader(new VCFHeader(headerLines, vcfSamples));
@@ -65,7 +64,24 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
         }
 
         Collection<VariantContext> matching = tracker.getValues(panel,ref.getLocus());
-        return matching.size();
+
+        if ( matching.size() < 2 ) {
+
+            // don't filter the variant
+            //output it instead
+            Collection<VariantContext> variants = tracker.getValues(variantCollection.variants, context.getLocation()) ;
+            if( variants.size() == 1) {
+                for( VariantContext v : variants ){
+                    vcfWriter.add(v);
+                }
+            }
+
+            return 0;
+        } else {
+            //variant was filtered, so add 1 to the filtered count
+            return 1;
+        }
+
     }
 
     @Override
