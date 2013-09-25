@@ -5,5 +5,12 @@
 *.war
 *.ear
 
+#vcf files
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.vcf.idx
+
+
 # Intellij IDE Files
 *.iml
