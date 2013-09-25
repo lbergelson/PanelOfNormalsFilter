@@ -9,6 +9,8 @@ import org.broadinstitute.sting.gatk.contexts.AlignmentContext;
 import org.broadinstitute.sting.gatk.contexts.ReferenceContext;
 import org.broadinstitute.sting.gatk.refdata.RefMetaDataTracker;
 import org.broadinstitute.sting.gatk.walkers.RodWalker;
+import org.broadinstitute.sting.utils.GenomeLoc;
+import org.broadinstitute.sting.utils.GenomeLocParser;
 import org.broadinstitute.sting.utils.SampleUtils;
 import org.broadinstitute.sting.utils.variant.GATKVCFUtils;
 import org.broadinstitute.sting.utils.variant.GATKVariantContextUtils;
@@ -63,17 +65,19 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
             return 0;
         }
 
-        Collection<VariantContext> matching = tracker.getValues(panel,ref.getLocus());
+        final int WIDTH = 5;
 
-        if ( matching.size() < 2 ) {
+        GenomeLoc currentLoc = context.getLocation();
+        GenomeLoc window = currentLoc.setStart(currentLoc.setStop(currentLoc,currentLoc.getStop() + WIDTH ), currentLoc.getStart() - WIDTH);
 
-            // don't filter the variant
-            //output it instead
-            Collection<VariantContext> variants = tracker.getValues(variantCollection.variants, context.getLocation()) ;
-            if( variants.size() == 1) {
-                for( VariantContext v : variants ){
-                    vcfWriter.add(v);
-                }
+        Collection<VariantContext> panelVariants = tracker.getValues(panel,window);
+        Collection<VariantContext> variants = tracker.getValues(variantCollection.variants, currentLoc) ;
+
+
+        if ( ! reject(variants, panelVariants)) {
+
+            for( VariantContext v : variants ){
+                vcfWriter.add(v);
             }
 
             return 0;
@@ -82,6 +86,10 @@ public class FilterByPON extends RodWalker<Integer, Integer>{
             return 1;
         }
 
+    }
+
+    private boolean reject(Collection<VariantContext> variants, Collection<VariantContext> panelVariants) {
+        return panelVariants.size() >= 2;
     }
 
     @Override
